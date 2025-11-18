@@ -106,7 +106,8 @@
   // Inicialización de Supabase similar a tu crud.html
   const SUPABASE_URL = 'https://sefhudejbsuktuhllojk.supabase.co';
   const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNlZmh1ZGVqYnN1a3R1aGxsb2prIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM0ODAwMDQsImV4cCI6MjA3OTA1NjAwNH0.CjzeKYzBTxawX1vnQVz7bMDU5co6gjQLh6frH0M-NNA';
-    
+  
+  const { createClient } = window.supabase;  
   const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
   // --- Locals ---

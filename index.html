@@ -76,10 +76,11 @@
   <div id="message"></div>
 
   <script>
-    // Configura tu URL y anon key de Supabase
-    const supabaseUrl = 'https://sefhudejbsuktuhllojk.supabase.co';
-    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNlZmh1ZGVqYnN1a3R1aGxsb2prIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM0ODAwMDQsImV4cCI6MjA3OTA1NjAwNH0.CjzeKYzBTxawX1vnQVz7bMDU5co6gjQLh6frH0M-NNA';
-    const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+    // Inicialización de Supabase - sigue el patrón de tu crud.html
+    const SUPABASE_URL = 'TU_SUPABASE_URL';
+    const SUPABASE_ANON_KEY = 'TU_SUPABASE_ANON_KEY';
+
+    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     const localSelect = document.getElementById('local-select');
     const colegioSelect = document.getElementById('colegio-select');
@@ -142,7 +143,6 @@
         return;
       }
 
-      // Agregar alumno a la tabla alumnos
       const { data: alumno, error: errAlumno } = await supabase
         .from('alumnos')
         .insert([{ nombre, apellido, colegio_id: colegioId }])
@@ -154,7 +154,6 @@
         return;
       }
 
-      // Opcional: se puede registrar en comite_registros si se desea
       await supabase.from('comite_registros').insert([{
         local_id: parseInt(localSelect.value),
         colegio_id: parseInt(colegioId),

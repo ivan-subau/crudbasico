@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>CRUD con Supabase y Login</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    #contenido { display: none; }
+    button { margin-left: 5px; }
+  </style>
+</head>
+<body>
+
+  <h1>Login Simple</h1>
+  <form id="formLogin">
+    <label>Usuario: <input type="text" id="usuario" required /></label><br/>
+    <label>Contraseña: <input type="password" id="password" required /></label><br/>
+    <button type="submit">Entrar</button>
+  </form>
+
+  <div id="contenido">
+    <h2>CRUD Comité</h2>
+
+    <form id="formComite">
+      <input type="hidden" id="id" />
+      <label>Nombre: <input type="text" id="nombre" required /></label><br/>
+      <label>Email: <input type="email" id="email" required /></label><br/>
+      <button type="submit">Guardar</button>
+      <button type="button" id="cerrarSesionBtn">Cerrar sesión</button>
+    </form>
+
+    <h3>Registros</h3>
+    <ul id="listaComite"></ul>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

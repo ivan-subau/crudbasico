@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Administrador - Gestión</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/supabase.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 700px;
+      margin: 2rem auto;
+      background: #f0f8ff;
+      padding: 1.5rem;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #5a2a83;
+      text-align: center;
+    }
+    section {
+      margin-bottom: 2rem;
+    }
+    label, select, input {
+      display: block;
+      width: 100%;
+      margin-top: 0.5rem;
+      padding: 0.4rem;
+    }
+    button {
+      margin-top: 0.8rem;
+      padding: 0.5rem 1.1rem;
+      background-color: #5a2a83;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #4a1f6b;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+      font-size: 0.9rem;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 0.5rem;
+      text-align: left;
+    }
+    th {
+      background-color: #5a2a83;
+      color: #fff;
+    }
+    .small-input {
+      max-width: 200px;
+    }
+    .action-btn {
+      background-color: #d9534f;
+      margin-left: 0.5rem;
+      padding: 0.3rem 0.6rem;
+      font-size: 0.8rem;
+    }
+  </style>
+</head>
+<body>
+  <h1>Administrador - Gestión de Datos</h1>
+
+  <section id="local-section">
+    <h2>Locales</h2>
+    <input type="text" id="nombre-local" placeholder="Nuevo nombre de Local" />
+    <button id="btn-agregar-local">Agregar Local</button>
+    <table id="local-table">
+      <thead><tr><th>Id</th><th>Nombre</th><th>Acciones</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </section>
+
+  <section id="colegio-section">
+    <h2>Colegios</h2>
+    <select id="local-for-colegio"></select>
+    <input type="text" id="nombre-colegio" placeholder="Nuevo nombre de Colegio" />
+    <button id="btn-agregar-colegio">Agregar Colegio</button>
+    <table id="colegio-table">
+      <thead><tr><th>Id</th><th>Nombre</th><th>Local</th><th>Acciones</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </section>
+
+  <section id="alumno-section">
+    <h2>Alumnos</h2>
+    <select id="colegio-for-alumno"></select>
+    <input type="text" id="nombre-alumno" placeholder="Nombre Alumno" />
+    <input type="text" id="apellido-alumno" placeholder="Apellido Alumno" />
+    <button id="btn-agregar-alumno">Agregar Alumno</button>
+    <table id="alumno-table">
+      <thead><tr><th>Id</th><th>Nombre</th><th>Apellido</th><th>Colegio</th><th>Acciones</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </section>
+
+<script>
+  const supabaseUrl = 'https://sefhudejbsuktuhllojk.supabase.co';
+  const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNlZmh1ZGVqYnN1a3R1aGxsb2prIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM0ODAwMDQsImV4cCI6MjA3OTA1NjAwNH0.CjzeKYzBTxawX1vnQVz7bMDU5co6gjQLh6frH0M-NNA';
+  const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+  // --- Locals ---
+  const nombreLocalInput = document.getElementById('nombre-local');
+  const btnAgregarLocal = document.getElementById('btn-agregar-local');
+  const localTableBody = document.querySelector('#local-table tbody');
+  const localForColegio = document.getElementById('local-for-colegio');
+
+  // --- Colegios ---
+  const localForColegioSelect = document.getElementById('local-for-colegio');
+  const nombreColegioInput = document.getElementById('nombre-colegio');
+  const btnAgregarColegio = document.getElementById('btn-agregar-colegio');
+  const colegioTableBody = document.querySelector('#colegio-table tbody');
+
+  // --- Alumnos ---
+  const colegioForAlumnoSelect = document.getElementById('colegio-for-alumno');
+  const nombreAlumnoInput = document.getElementById('nombre-alumno');
+  const apellidoAlumnoInput = document.getElementById('apellido-alumno');
+  const btnAgregarAlumno = document.getElementById('btn-agregar-alumno');
+  const alumnoTableBody = document.querySelector('#alumno-table tbody');
+
+  // Funciones para cargar, agregar y eliminar locales
+  async function loadLocales() {
+    const { data, error } = await supabase.from('locales').select().order('nombre');
+    if (error) {
+      alert('Error cargando locales');
+      return;
+    }
+    localTableBody.innerHTML = '';
+    localForColegioSelect.innerHTML = '<option value="">-- Selecciona Local --</option>';
+    data.forEach(local => {
+      localTableBody.innerHTML += `
+        <tr>
+          <td>${local.id}</td>
+          <td contenteditable="true" data-id="${local.id}" class="editable-local">${local.nombre}</td>
+          <td><button class="btn-delete-local" data-id="${local.id}">Eliminar</button></td>
+        </tr>`;
+      localForColegioSelect.innerHTML += `<option value="${local.id}">${local.nombre}</option>`;
+    });
+    attachLocalEvents();
+  }
+
+  async function attachLocalEvents() {
+    document.querySelectorAll('.editable-local').forEach(cell => {
+      cell.onblur = async (e) => {
+        const id = e.target.dataset.id;
+        const newName = e.target.textContent.trim();
+        if (!newName) {
+          alert('El nombre no puede estar vacío');
+          loadLocales();
+          return;
+        }
+        const { error } = await supabase.from('locales').update({ nombre: newName }).eq('id', id);
+        if (error) alert('Error actualizando local');
+        else loadLocales();
+      };
+    });
+
+    document.querySelectorAll('.btn-delete-local').forEach(btn => {
+      btn.onclick = async (e) => {
+        const id = e.target.dataset.id;
+        if (confirm('¿Eliminar este local? Esto eliminará también colegios y alumnos relacionados')) {
+          const { error } = await supabase.from('locales').delete().eq('id', id);
+          if (error) alert('Error eliminando local');
+          else {
+            await loadLocales();
+            loadColegios();
+            loadAlumnos();
+          }
+        }
+      };
+    });
+  }
+
+  btnAgregarLocal.onclick = async () => {
+    const nombre = nombreLocalInput.value.trim();
+    if (!nombre) return alert('Ingrese un nombre para el local');
+    const { error } = await supabase.from('locales').insert([{ nombre }]);
+    if (error) alert('Error agregando local');
+    else {
+      nombreLocalInput.value = '';
+      loadLocales();
+    }
+  };
+
+  // Funciones para manejar colegios
+  async function loadColegios() {
+    const { data, error } = await supabase.from('colegios').select('id, nombre, local_id').order('nombre');
+    if (error) {
+      alert('Error cargando colegios');
+      return;
+    }
+    colegioTableBody.innerHTML = '';
+    colegioForAlumnoSelect.innerHTML = '<option value="">-- Selecciona Colegio --</option>';
+    data.forEach(colegio => {
+      colegioTableBody.innerHTML += `
+        <tr>
+          <td>${colegio.id}</td>
+          <td contenteditable="true" data-id="${colegio.id}" class="editable-colegio">${colegio.nombre}</td>
+          <td>${localForColegioSelect.querySelector(`option[value="${colegio.local_id}"]`)?.textContent || 'N/A'}</td>
+          <td><button class="btn-delete-colegio" data-id="${colegio.id}">Eliminar</button></td>
+        </tr>`;
+      colegioForAlumnoSelect.innerHTML += `<option value="${colegio.id}">${colegio.nombre}</option>`;
+    });
+    attachColegioEvents();
+  }
+
+  async function attachColegioEvents() {
+    document.querySelectorAll('.editable-colegio').forEach(cell => {
+      cell.onblur = async (e) => {
+        const id = e.target.dataset.id;
+        const newName = e.target.textContent.trim();
+        if (!newName) {
+          alert('El nombre no puede estar vacío');
+          loadColegios();
+          return;
+        }
+        const { error } = await supabase.from('colegios').update({ nombre: newName }).eq('id', id);
+        if (error) alert('Error actualizando colegio');
+        else loadColegios();
+      };
+    });
+
+    document.querySelectorAll('.btn-delete-colegio').forEach(btn => {
+      btn.onclick = async (e) => {
+        const id = e.target.dataset.id;
+        if (confirm('¿Eliminar este colegio? Esto eliminará también los alumnos relacionados')) {
+          const { error } = await supabase.from('colegios').delete().eq('id', id);
+          if (error) alert('Error eliminando colegio');
+          else {
+            await loadColegios();
+            loadAlumnos();
+          }
+        }
+      };
+    });
+  }
+
+  btnAgregarColegio.onclick = async () => {
+    const nombre = nombreColegioInput.value.trim();
+    const localId = localForColegioSelect.value;
+    if (!nombre || !localId) return alert('Complete nombre y local');
+    const { error } = await supabase.from('colegios').insert([{ nombre, local_id: localId }]);
+    if (error) alert('Error agregando colegio');
+    else {
+      nombreColegioInput.value = '';
+      loadColegios();
+    }
+  };
+
+  // Funciones para manejar alumnos
+  async function loadAlumnos() {
+    const { data, error } = await supabase.from('alumnos').select('id, nombre, apellido, colegio_id').order('nombre');
+    if (error) {
+      alert('Error cargando alumnos');
+      return;
+    }
+    alumnoTableBody.innerHTML = '';
+    data.forEach(alumno => {
+      alumnoTableBody.innerHTML += `
+        <tr>
+          <td>${alumno.id}</td>
+          <td contenteditable="true" data-id="${alumno.id}" class="editable-alumno-nombre">${alumno.nombre}</td>
+          <td contenteditable="true" data-id="${alumno.id}" class="editable-alumno-apellido">${alumno.apellido}</td>
+          <td>${colegioForAlumnoSelect.querySelector(`option[value="${alumno.colegio_id}"]`)?.textContent || 'N/A'}</td>
+          <td><button class="btn-delete-alumno" data-id="${alumno.id}">Eliminar</button></td>
+        </tr>`;
+    });
+    attachAlumnoEvents();
+  }
+
+  async function attachAlumnoEvents() {
+    document.querySelectorAll('.editable-alumno-nombre').forEach(cell => {
+      cell.onblur = async (e) => {
+        const id = e.target.dataset.id;
+        const newName = e.target.textContent.trim();
+        if (!newName) {
+          alert('El nombre no puede estar vacío');
+          loadAlumnos();
+          return;
+        }
+        const { error } = await supabase.from('alumnos').update({ nombre: newName }).eq('id', id);
+        if (error) alert('Error actualizando alumno');
+        else loadAlumnos();
+      };
+    });
+
+    document.querySelectorAll('.editable-alumno-apellido').forEach(cell => {
+      cell.onblur = async (e) => {
+        const id = e.target.dataset.id;
+        const newLastName = e.target.textContent.trim();
+        if (!newLastName) {
+          alert('El apellido no puede estar vacío');
+          loadAlumnos();
+          return;
+        }
+        const { error } = await supabase.from('alumnos').update({ apellido: newLastName }).eq('id', id);
+        if (error) alert('Error actualizando alumno');
+        else loadAlumnos();
+      };
+    });
+
+    document.querySelectorAll('.btn-delete-alumno').forEach(btn => {
+      btn.onclick = async (e) => {
+        const id = e.target.dataset.id;
+        if (confirm('¿Eliminar este alumno?')) {
+          const { error } = await supabase.from('alumnos').delete().eq('id', id);
+          if (error) alert('Error eliminando alumno');
+          else loadAlumnos();
+        }
+      };
+    });
+  }
+
+  btnAgregarAlumno.onclick = async () => {
+    const nombre = nombreAlumnoInput.value.trim();
+    const apellido = apellidoAlumnoInput.value.trim();
+    const colegioId = colegioForAlumnoSelect.value;
+    if (!nombre || !apellido || !colegioId) return alert('Complete campos para agregar alumno');
+    const { error } = await supabase.from('alumnos').insert([{ nombre, apellido, colegio_id: colegioId }]);
+    if (error) alert('Error agregando alumno');
+    else {
+      nombreAlumnoInput.value = '';
+      apellidoAlumnoInput.value = '';
+      loadAlumnos();
+    }
+  };
+
+  // Inicializar tablas con datos
+  loadLocales();
+  loadColegios();
+  loadAlumnos();
+</script>
+</body>
+</html>

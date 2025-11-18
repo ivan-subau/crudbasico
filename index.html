@@ -2,38 +2,171 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <title>CRUD con Supabase y Login</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <title>Comité - Registro de Alumnos</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/supabase.min.js"></script>
   <style>
-    body { font-family: Arial, sans-serif; margin: 20px; }
-    #contenido { display: none; }
-    button { margin-left: 5px; }
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 600px;
+      margin: 2rem auto;
+      background: #f9f9f9;
+      padding: 1rem;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #0275d8;
+      text-align: center;
+    }
+    label {
+      display: block;
+      margin-top: 1rem;
+      font-weight: bold;
+    }
+    select, input {
+      width: 100%;
+      padding: 0.5rem;
+      margin-top: 0.25rem;
+      box-sizing: border-box;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+    }
+    button {
+      margin-top: 1rem;
+      padding: 0.6rem 1.2rem;
+      background-color: #0275d8;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #025aa5;
+    }
+    #message {
+      margin-top: 1rem;
+      font-weight: bold;
+      color: green;
+      text-align: center;
+    }
   </style>
 </head>
 <body>
+  <h1>Registro Comité - Alumnos</h1>
+  
+  <label for="local-select">Selecciona un Local</label>
+  <select id="local-select">
+    <option value="">-- Selecciona Local --</option>
+  </select>
+  
+  <label for="colegio-select">Selecciona un Colegio</label>
+  <select id="colegio-select" disabled>
+    <option value="">-- Selecciona Colegio --</option>
+  </select>
+  
+  <label for="nombre-alumno">Nombre del Alumno</label>
+  <input type="text" id="nombre-alumno" placeholder="Nombre" />
+  
+  <label for="apellido-alumno">Apellido del Alumno</label>
+  <input type="text" id="apellido-alumno" placeholder="Apellido" />
+  
+  <button id="btn-agregar-alumno" disabled>Agregar Alumno</button>
+  
+  <div id="message"></div>
 
-  <h1>Login Simple</h1>
-  <form id="formLogin">
-    <label>Usuario: <input type="text" id="usuario" required /></label><br/>
-    <label>Contraseña: <input type="password" id="password" required /></label><br/>
-    <button type="submit">Entrar</button>
-  </form>
+  <script>
+    // Configura tu URL y anon key de Supabase
+    const supabaseUrl = 'https://sefhudejbsuktuhllojk.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNlZmh1ZGVqYnN1a3R1aGxsb2prIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM0ODAwMDQsImV4cCI6MjA3OTA1NjAwNH0.CjzeKYzBTxawX1vnQVz7bMDU5co6gjQLh6frH0M-NNA';
+    const supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-  <div id="contenido">
-    <h2>CRUD Comité</h2>
+    const localSelect = document.getElementById('local-select');
+    const colegioSelect = document.getElementById('colegio-select');
+    const nombreAlumno = document.getElementById('nombre-alumno');
+    const apellidoAlumno = document.getElementById('apellido-alumno');
+    const btnAgregarAlumno = document.getElementById('btn-agregar-alumno');
+    const message = document.getElementById('message');
 
-    <form id="formComite">
-      <input type="hidden" id="id" />
-      <label>Nombre: <input type="text" id="nombre" required /></label><br/>
-      <label>Email: <input type="email" id="email" required /></label><br/>
-      <button type="submit">Guardar</button>
-      <button type="button" id="cerrarSesionBtn">Cerrar sesión</button>
-    </form>
+    async function loadLocales() {
+      const { data, error } = await supabase.from('locales').select('id, nombre').order('nombre');
+      if (error) {
+        message.textContent = 'Error cargando locales';
+        return;
+      }
+      data.forEach(local => {
+        const option = document.createElement('option');
+        option.value = local.id;
+        option.textContent = local.nombre;
+        localSelect.appendChild(option);
+      });
+    }
 
-    <h3>Registros</h3>
-    <ul id="listaComite"></ul>
-  </div>
+    localSelect.addEventListener('change', async () => {
+      const localId = localSelect.value;
+      colegioSelect.innerHTML = '<option value="">-- Selecciona Colegio --</option>';
+      colegioSelect.disabled = true;
+      btnAgregarAlumno.disabled = true;
+      if (!localId) return;
 
-  <script src="app.js"></script>
+      const { data, error } = await supabase
+        .from('colegios')
+        .select('id, nombre')
+        .eq('local_id', localId)
+        .order('nombre');
+
+      if (error) {
+        message.textContent = 'Error cargando colegios';
+        return;
+      }
+      data.forEach(colegio => {
+        const option = document.createElement('option');
+        option.value = colegio.id;
+        option.textContent = colegio.nombre;
+        colegioSelect.appendChild(option);
+      });
+      colegioSelect.disabled = false;
+    });
+
+    colegioSelect.addEventListener('change', () => {
+      btnAgregarAlumno.disabled = !colegioSelect.value;
+    });
+
+    btnAgregarAlumno.addEventListener('click', async () => {
+      const nombre = nombreAlumno.value.trim();
+      const apellido = apellidoAlumno.value.trim();
+      const colegioId = colegioSelect.value;
+
+      if (!nombre || !apellido || !colegioId) {
+        message.textContent = 'Completa todos los campos';
+        return;
+      }
+
+      // Agregar alumno a la tabla alumnos
+      const { data: alumno, error: errAlumno } = await supabase
+        .from('alumnos')
+        .insert([{ nombre, apellido, colegio_id: colegioId }])
+        .select()
+        .single();
+
+      if (errAlumno) {
+        message.textContent = 'Error agregando alumno';
+        return;
+      }
+
+      // Opcional: se puede registrar en comite_registros si se desea
+      await supabase.from('comite_registros').insert([{
+        local_id: parseInt(localSelect.value),
+        colegio_id: parseInt(colegioId),
+        alumno_id: alumno.id
+      }]);
+
+      message.textContent = `Alumno ${nombre} ${apellido} agregado correctamente`;
+      nombreAlumno.value = '';
+      apellidoAlumno.value = '';
+    });
+
+    loadLocales();
+  </script>
 </body>
 </html>
